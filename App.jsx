@@ -179,7 +179,7 @@ export default function App() {
                 <FileText className="h-3.5 w-3.5" />
                 Invoice App
               </div>
-              <h1 className="text-3xl font-bold sm:text-4xl">Responsive Invoice Builder</h1>
+              <h1 className="text-3xl font-bold sm:text-4xl">Invoice Builder</h1>
             </div>
 
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4">
