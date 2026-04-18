@@ -43,6 +43,15 @@ function formatMoney(value) {
   }).format(Number(value || 0));
 }
 
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
 function getPdfFileName(invoiceNumber) {
   return `invoice-${invoiceNumber || "draft"}.pdf`;
 }
@@ -195,6 +204,163 @@ function createInvoicePdf(invoice, totalDue) {
   return pdf;
 }
 
+function createPrintableInvoiceHtml(invoice, totalDue) {
+  const rows = invoice.items
+    .map((item) => {
+      const qty = Number(item.qty || 0);
+      const unitPrice = Number(item.unitPrice || 0);
+      const lineTotal = qty * unitPrice;
+
+      return `
+        <tr>
+          <td>${escapeHtml(item.description || "-")}</td>
+          <td>${qty}</td>
+          <td>${escapeHtml(String(unitPrice))}</td>
+          <td>${lineTotal.toFixed(2)}</td>
+        </tr>
+      `;
+    })
+    .join("");
+
+  return `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>${escapeHtml(getPdfFileName(invoice.invoiceNumber))}</title>
+    <style>
+      body {
+        margin: 0;
+        background: #ffffff;
+        color: #000000;
+        font-family: Arial, Helvetica, sans-serif;
+      }
+
+      .page {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 28px 22px 40px;
+      }
+
+      h1 {
+        margin: 0 0 32px;
+        text-align: center;
+        font-size: 36px;
+      }
+
+      .field {
+        margin-bottom: 22px;
+        font-size: 15px;
+        line-height: 1.5;
+      }
+
+      .field-label {
+        margin-bottom: 6px;
+        font-size: 16px;
+      }
+
+      table {
+        width: 100%;
+        margin-top: 34px;
+        border-collapse: collapse;
+      }
+
+      th,
+      td {
+        border: 1px solid #c4c4c4;
+        padding: 14px 12px;
+        text-align: left;
+        vertical-align: top;
+      }
+
+      th {
+        font-size: 14px;
+      }
+
+      .total {
+        margin-top: 24px;
+        text-align: right;
+        font-size: 24px;
+        font-weight: 700;
+      }
+
+      .notes {
+        margin-top: 28px;
+      }
+
+      .notes-label {
+        margin-bottom: 8px;
+        font-size: 16px;
+      }
+
+      .notes-body {
+        white-space: pre-wrap;
+        font-size: 15px;
+        line-height: 1.6;
+      }
+
+      @media print {
+        body {
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
+        }
+
+        .page {
+          max-width: none;
+          padding: 18px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <h1>Invoice</h1>
+
+      <section class="field">
+        <div class="field-label">From:</div>
+        <div>${escapeHtml(invoice.from || "-")}</div>
+      </section>
+
+      <section class="field">
+        <div class="field-label">To:</div>
+        <div>${escapeHtml(invoice.to || "-")}</div>
+      </section>
+
+      <section class="field">
+        <div class="field-label">Invoice #:</div>
+        <div>${escapeHtml(invoice.invoiceNumber || "-")}</div>
+      </section>
+
+      <section class="field">
+        <div class="field-label">Date:</div>
+        <div>${escapeHtml(invoice.date || "-")}</div>
+      </section>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Description</th>
+            <th>Qty</th>
+            <th>Unit Price ($)</th>
+            <th>Total ($)</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rows || '<tr><td>-</td><td>0</td><td>0</td><td>0.00</td></tr>'}
+        </tbody>
+      </table>
+
+      <div class="total">Total Due: ${escapeHtml(formatMoney(totalDue))}</div>
+
+      <section class="notes">
+        <div class="notes-label">Notes:</div>
+        <div class="notes-body">${escapeHtml(invoice.notes || "No additional notes.")}</div>
+      </section>
+    </main>
+  </body>
+</html>`;
+}
+
 function loadInvoice() {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
@@ -309,7 +475,27 @@ export default function App() {
     }
   };
 
-  const printInvoice = () => window.print();
+  const printInvoice = () => {
+    const printWindow = window.open("", "_blank");
+
+    if (!printWindow) {
+      window.print();
+      return;
+    }
+
+    printWindow.document.open();
+    printWindow.document.write(createPrintableInvoiceHtml(invoice, totalDue));
+    printWindow.document.close();
+
+    setTimeout(() => {
+      try {
+        printWindow.focus();
+        printWindow.print();
+      } catch (error) {
+        console.error("Print failed", error);
+      }
+    }, 400);
+  };
 
   const downloadPdf = async () => {
     if (pdfBusy) return;
