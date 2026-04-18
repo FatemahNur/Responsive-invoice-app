@@ -144,18 +144,6 @@ export default function App() {
     });
   };
 
-  const exportJson = () => {
-    const blob = new Blob([JSON.stringify(invoice, null, 2)], {
-      type: "application/json",
-    });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `invoice-${invoice.invoiceNumber || "draft"}.json`;
-    link.click();
-    URL.revokeObjectURL(url);
-  };
-
   const copySummary = async () => {
     const text = `Invoice #${invoice.invoiceNumber}\nFrom: ${invoice.from}\nTo: ${invoice.to}\nDate: ${invoice.date}\nTotal Due: ${formatMoney(totalDue)}`;
     try {
@@ -168,6 +156,13 @@ export default function App() {
   };
 
   const printInvoice = () => window.print();
+
+  const downloadPdf = () => {
+    const originalTitle = document.title;
+    document.title = `invoice-${invoice.invoiceNumber || "draft"}`;
+    window.print();
+    document.title = originalTitle;
+  };
 
   return (
     <div className="min-h-screen bg-slate-100 text-slate-900 print:bg-white">
@@ -190,7 +185,16 @@ export default function App() {
                 <div className="mb-1 flex justify-center">
                   <Printer className="h-4 w-4" />
                 </div>
-                Print / PDF
+                Print
+              </button>
+              <button
+                onClick={downloadPdf}
+                className="rounded-2xl bg-white/10 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/20"
+              >
+                <div className="mb-1 flex justify-center">
+                  <Download className="h-4 w-4" />
+                </div>
+                PDF
               </button>
               <button
                 onClick={copySummary}
