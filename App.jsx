@@ -606,7 +606,7 @@ export default function App() {
 
         <div className="grid gap-6 xl:grid-cols-[1.6fr_0.8fr]">
           <main className="space-y-6">
-            <Card title="Invoice details" subtitle="A clean layout inspired by your screenshot, improved for phones and tablets.">
+            <Card title="Invoice details">
               <div className="grid gap-4 md:grid-cols-2">
                 <Field label="From" icon={User}>
                   <input
@@ -648,7 +648,6 @@ export default function App() {
 
             <Card
               title="Items"
-              subtitle="Users can add services or products quickly."
               right={
                 <button
                   onClick={addItem}
@@ -732,7 +731,7 @@ export default function App() {
               </div>
             </Card>
 
-            <Card title="Notes" subtitle="Helpful for payment terms or extra instructions.">
+            <Card title="Notes">
               <textarea
                 className="min-h-[140px] w-full rounded-2xl border border-slate-300 px-4 py-3 outline-none transition focus:border-slate-900"
                 value={invoice.notes}
@@ -743,7 +742,7 @@ export default function App() {
           </main>
 
           <aside className="space-y-6">
-            <Card title="Summary" subtitle="A sticky side panel on larger screens for fast review.">
+            <Card title="Summary">
               <div className="space-y-4 lg:sticky lg:top-6">
                 <div className="rounded-3xl bg-slate-900 p-5 text-white">
                   <div className="text-sm text-slate-300">Total Due</div>
