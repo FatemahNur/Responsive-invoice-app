@@ -476,25 +476,52 @@ export default function App() {
   };
 
   const printInvoice = () => {
-    const printWindow = window.open("", "_blank");
+    const printFrame = document.createElement("iframe");
+    printFrame.setAttribute("aria-hidden", "true");
+    printFrame.style.position = "fixed";
+    printFrame.style.right = "0";
+    printFrame.style.bottom = "0";
+    printFrame.style.width = "0";
+    printFrame.style.height = "0";
+    printFrame.style.border = "0";
 
-    if (!printWindow) {
+    const cleanup = () => {
+      setTimeout(() => {
+        printFrame.remove();
+      }, 1000);
+    };
+
+    printFrame.onload = () => {
+      const frameWindow = printFrame.contentWindow;
+      if (!frameWindow) {
+        cleanup();
+        window.print();
+        return;
+      }
+
+      try {
+        frameWindow.focus();
+        frameWindow.print();
+      } catch (error) {
+        console.error("Print failed", error);
+        window.print();
+      } finally {
+        cleanup();
+      }
+    };
+
+    document.body.appendChild(printFrame);
+
+    const frameDocument = printFrame.contentWindow?.document;
+    if (!frameDocument) {
+      cleanup();
       window.print();
       return;
     }
 
-    printWindow.document.open();
-    printWindow.document.write(createPrintableInvoiceHtml(invoice, totalDue));
-    printWindow.document.close();
-
-    setTimeout(() => {
-      try {
-        printWindow.focus();
-        printWindow.print();
-      } catch (error) {
-        console.error("Print failed", error);
-      }
-    }, 400);
+    frameDocument.open();
+    frameDocument.write(createPrintableInvoiceHtml(invoice, totalDue));
+    frameDocument.close();
   };
 
   const downloadPdf = async () => {
