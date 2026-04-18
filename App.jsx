@@ -188,8 +188,31 @@ export default function App() {
       pdf.addImage(imageData, "PNG", 0, position, imageWidth, imageHeight);
       heightLeft -= pageHeight;
     }
+    const fileName = `invoice-${invoice.invoiceNumber || "draft"}.pdf`;
+    const pdfBlob = pdf.output("blob");
+    const pdfFile = new File([pdfBlob], fileName, { type: "application/pdf" });
 
-    pdf.save(`invoice-${invoice.invoiceNumber || "draft"}.pdf`);
+    if (navigator.share && navigator.canShare?.({ files: [pdfFile] })) {
+      await navigator.share({
+        files: [pdfFile],
+        title: fileName,
+      });
+      return;
+    }
+
+    const pdfUrl = URL.createObjectURL(pdfBlob);
+    const link = document.createElement("a");
+    link.href = pdfUrl;
+    link.download = fileName;
+    link.rel = "noopener";
+    link.click();
+
+    // Mobile browsers may ignore `download`; opening the blob still gives the user
+    // a way to save/share the PDF from the browser viewer.
+    setTimeout(() => {
+      window.open(pdfUrl, "_blank", "noopener,noreferrer");
+      setTimeout(() => URL.revokeObjectURL(pdfUrl), 60000);
+    }, 250);
   };
 
   return (
