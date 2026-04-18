@@ -180,10 +180,6 @@ export default function App() {
                 Invoice App
               </div>
               <h1 className="text-3xl font-bold sm:text-4xl">Responsive Invoice Builder</h1>
-              <p className="mt-2 max-w-2xl text-sm text-slate-300 sm:text-base">
-                Built for desktop and mobile, easy for users to fill in, and friendly for GitHub deployment.
-                It also saves invoice data automatically in local storage.
-              </p>
             </div>
 
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4">
@@ -195,15 +191,6 @@ export default function App() {
                   <Printer className="h-4 w-4" />
                 </div>
                 Print / PDF
-              </button>
-              <button
-                onClick={exportJson}
-                className="rounded-2xl bg-white/10 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/20"
-              >
-                <div className="mb-1 flex justify-center">
-                  <Download className="h-4 w-4" />
-                </div>
-                Export
               </button>
               <button
                 onClick={copySummary}
@@ -388,25 +375,9 @@ export default function App() {
                   </div>
                 </div>
 
-                <div className="rounded-2xl border border-dashed border-slate-300 p-4 text-sm leading-6 text-slate-600">
-                  This version is easier to use on mobile than a basic table layout. It also works well for GitHub deployment because it is a simple React app with no backend required.
-                </div>
               </div>
             </Card>
 
-            <Card title="Recommended project files" subtitle="Use this structure for a Vite + React GitHub-ready project.">
-              <div className="rounded-2xl bg-slate-50 p-4 font-mono text-sm leading-7 text-slate-700">
-                invoice-app/
-                <br />|- public/
-                <br />|- src/
-                <br />|  |- App.jsx
-                <br />|  |- main.jsx
-                <br />|  `- index.css
-                <br />|- package.json
-                <br />|- vite.config.js
-                <br />`- README.md
-              </div>
-            </Card>
           </aside>
         </div>
       </div>
