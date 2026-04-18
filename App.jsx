@@ -1,4 +1,6 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import html2canvas from "html2canvas";
+import { jsPDF } from "jspdf";
 import {
   Calendar,
   Download,
@@ -89,6 +91,7 @@ function Card({ title, subtitle, children, right }) {
 export default function App() {
   const [invoice, setInvoice] = useState(loadInvoice);
   const [copied, setCopied] = useState(false);
+  const invoiceRef = useRef(null);
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(invoice));
@@ -157,15 +160,40 @@ export default function App() {
 
   const printInvoice = () => window.print();
 
-  const downloadPdf = () => {
-    const originalTitle = document.title;
-    document.title = `invoice-${invoice.invoiceNumber || "draft"}`;
-    window.print();
-    document.title = originalTitle;
+  const downloadPdf = async () => {
+    if (!invoiceRef.current) return;
+
+    const canvas = await html2canvas(invoiceRef.current, {
+      scale: 2,
+      backgroundColor: "#f1f5f9",
+      useCORS: true,
+    });
+
+    const imageData = canvas.toDataURL("image/png");
+    const pdf = new jsPDF("p", "mm", "a4");
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+    const imageWidth = pageWidth;
+    const imageHeight = (canvas.height * imageWidth) / canvas.width;
+
+    let heightLeft = imageHeight;
+    let position = 0;
+
+    pdf.addImage(imageData, "PNG", 0, position, imageWidth, imageHeight);
+    heightLeft -= pageHeight;
+
+    while (heightLeft > 0) {
+      position = heightLeft - imageHeight;
+      pdf.addPage();
+      pdf.addImage(imageData, "PNG", 0, position, imageWidth, imageHeight);
+      heightLeft -= pageHeight;
+    }
+
+    pdf.save(`invoice-${invoice.invoiceNumber || "draft"}.pdf`);
   };
 
   return (
-    <div className="min-h-screen bg-slate-100 text-slate-900 print:bg-white">
+    <div ref={invoiceRef} className="min-h-screen bg-slate-100 text-slate-900 print:bg-white">
       <div className="mx-auto max-w-7xl p-3 sm:p-5 lg:p-8">
         <header className="mb-6 rounded-[32px] bg-slate-900 px-5 py-6 text-white shadow-sm sm:px-7 sm:py-8 print:hidden">
           <div className="grid gap-5 lg:grid-cols-[1.3fr_0.8fr] lg:items-center">
