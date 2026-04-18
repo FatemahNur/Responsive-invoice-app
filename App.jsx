@@ -63,225 +63,134 @@ function createInvoicePdf(invoice, totalDue) {
   const pageHeight = pdf.internal.pageSize.getHeight();
   const margin = 16;
   const contentWidth = pageWidth - margin * 2;
-  const dark = [15, 23, 42];
-  const muted = [100, 116, 139];
-  const border = [226, 232, 240];
-  const soft = [248, 250, 252];
-  const accent = [255, 255, 255];
+  const border = [196, 196, 196];
   const tableColumns = {
-    description: 88,
-    qty: 20,
-    unitPrice: 34,
-    total: 36,
+    description: 76,
+    qty: 24,
+    unitPrice: 40,
+    total: 38,
   };
-
-  let pageNumber = 1;
-
-  const drawPageShell = (firstPage) => {
-    pdf.setFillColor(255, 255, 255);
-    pdf.rect(0, 0, pageWidth, pageHeight, "F");
-
-    if (firstPage) {
-      pdf.setFillColor(...dark);
-      pdf.roundedRect(margin, margin, contentWidth, 30, 4, 4, "F");
-
-      pdf.setTextColor(...accent);
-      pdf.setFont("helvetica", "bold");
-      pdf.setFontSize(21);
-      pdf.text("INVOICE", margin + 8, margin + 13);
-
-      pdf.setFont("helvetica", "normal");
-      pdf.setFontSize(9);
-      pdf.text("Responsive Invoice App", margin + 8, margin + 20);
-
-      pdf.setFont("helvetica", "normal");
-      pdf.setFontSize(9);
-      pdf.text(`Invoice #: ${invoice.invoiceNumber || "Draft"}`, pageWidth - margin - 8, margin + 10, {
-        align: "right",
-      });
-      pdf.text(`Date: ${invoice.date || "-"}`, pageWidth - margin - 8, margin + 16, {
-        align: "right",
-      });
-
-      pdf.setFont("helvetica", "bold");
-      pdf.setFontSize(18);
-      pdf.text(formatMoney(totalDue), pageWidth - margin - 8, margin + 25, {
-        align: "right",
-      });
-
-      return margin + 40;
-    }
-
+  const drawTableHeader = (y) => {
     pdf.setDrawColor(...border);
-    pdf.line(margin, margin, pageWidth - margin, margin);
-
-    pdf.setTextColor(...dark);
     pdf.setFont("helvetica", "bold");
     pdf.setFontSize(12);
-    pdf.text(`Invoice ${invoice.invoiceNumber || "Draft"}`, margin, margin + 7);
 
-    pdf.setFont("helvetica", "normal");
-    pdf.setFontSize(9);
-    pdf.text(`Page ${pageNumber}`, pageWidth - margin, margin + 7, {
-      align: "right",
-    });
+    const headerHeight = 16;
+    let x = margin;
 
-    return margin + 16;
-  };
-
-  const drawInfoCard = (x, y, width, title, body) => {
-    const innerWidth = width - 8;
-    const bodyLines = pdf.splitTextToSize(body || "-", innerWidth);
-    const height = Math.max(24, 14 + bodyLines.length * 5);
-
-    pdf.setFillColor(...soft);
-    pdf.setDrawColor(...border);
-    pdf.roundedRect(x, y, width, height, 3, 3, "FD");
-
-    pdf.setTextColor(...muted);
-    pdf.setFont("helvetica", "bold");
-    pdf.setFontSize(8);
-    pdf.text(title.toUpperCase(), x + 4, y + 7);
-
-    pdf.setTextColor(...dark);
-    pdf.setFont("helvetica", "normal");
-    pdf.setFontSize(11);
-    pdf.text(bodyLines, x + 4, y + 14);
-
-    return height;
-  };
-
-  const drawTableHeader = (y) => {
-    pdf.setFillColor(...dark);
-    pdf.roundedRect(margin, y, contentWidth, 10, 2, 2, "F");
-
-    pdf.setTextColor(...accent);
-    pdf.setFont("helvetica", "bold");
-    pdf.setFontSize(9);
-
-    let x = margin + 4;
-    pdf.text("Description", x, y + 6.5);
+    pdf.rect(x, y, tableColumns.description, headerHeight);
+    pdf.text("Description", x + 4, y + 10);
     x += tableColumns.description;
-    pdf.text("Qty", x + tableColumns.qty / 2, y + 6.5, { align: "center" });
-    x += tableColumns.qty;
-    pdf.text("Unit Price", x + tableColumns.unitPrice - 2, y + 6.5, { align: "right" });
-    x += tableColumns.unitPrice;
-    pdf.text("Total", x + tableColumns.total - 2, y + 6.5, { align: "right" });
 
-    return y + 14;
+    pdf.rect(x, y, tableColumns.qty, headerHeight);
+    pdf.text("Qty", x + 4, y + 10);
+    x += tableColumns.qty;
+
+    pdf.rect(x, y, tableColumns.unitPrice, headerHeight);
+    pdf.text("Unit Price ($)", x + 4, y + 10);
+    x += tableColumns.unitPrice;
+
+    pdf.rect(x, y, tableColumns.total, headerHeight);
+    pdf.text("Total ($)", x + 4, y + 10);
+
+    return y + headerHeight;
   };
 
   const addPage = () => {
     pdf.addPage();
-    pageNumber += 1;
-    return drawPageShell(false);
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(22);
+    pdf.text("Invoice", pageWidth / 2, 22, { align: "center" });
+    return 34;
   };
 
-  let y = drawPageShell(true);
-  const cardGap = 6;
-  const cardWidth = (contentWidth - cardGap) / 2;
-  const fromHeight = drawInfoCard(margin, y, cardWidth, "From", invoice.from);
-  const toHeight = drawInfoCard(margin + cardWidth + cardGap, y, cardWidth, "To", invoice.to);
-  y += Math.max(fromHeight, toHeight) + 8;
+  const drawInfoField = (label, value, y) => {
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(14);
+    pdf.text(`${label}:`, margin, y);
 
-  pdf.setTextColor(...muted);
+    const valueLines = pdf.splitTextToSize(value || "-", contentWidth);
+    pdf.setFontSize(11);
+    pdf.text(valueLines, margin + 3, y + 10);
+
+    return y + 24 + (valueLines.length - 1) * 5;
+  };
+
+  let y = 22;
+
   pdf.setFont("helvetica", "bold");
-  pdf.setFontSize(8);
-  pdf.text("SUMMARY", margin, y);
+  pdf.setFontSize(22);
+  pdf.text("Invoice", pageWidth / 2, y, { align: "center" });
 
-  y += 6;
-  pdf.setFillColor(...soft);
-  pdf.setDrawColor(...border);
-  pdf.roundedRect(margin, y, contentWidth, 18, 3, 3, "FD");
+  y = 40;
+  y = drawInfoField("From", invoice.from, y);
+  y = drawInfoField("To", invoice.to, y);
+  y = drawInfoField("Invoice #", invoice.invoiceNumber, y);
+  y = drawInfoField("Date", invoice.date, y);
 
-  pdf.setTextColor(...muted);
-  pdf.setFont("helvetica", "normal");
-  pdf.setFontSize(9);
-  pdf.text("Invoice #", margin + 5, y + 7);
-  pdf.text("Date", margin + 5, y + 13);
-
-  pdf.text("Items", margin + 78, y + 7);
-  pdf.text("Total Due", margin + 78, y + 13);
-
-  pdf.setTextColor(...dark);
-  pdf.setFont("helvetica", "bold");
-  pdf.text(invoice.invoiceNumber || "-", margin + 36, y + 7);
-  pdf.text(invoice.date || "-", margin + 36, y + 13);
-  pdf.text(String(invoice.items.length), margin + 104, y + 7);
-  pdf.text(formatMoney(totalDue), margin + 104, y + 13);
-
-  y += 28;
+  y += 8;
   y = drawTableHeader(y);
 
-  invoice.items.forEach((item, index) => {
-    const descriptionLines = pdf.splitTextToSize(item.description || "-", tableColumns.description - 6);
-    const rowHeight = Math.max(11, 5 + descriptionLines.length * 5);
+  invoice.items.forEach((item) => {
+    const descriptionLines = pdf.splitTextToSize(item.description || "-", tableColumns.description - 8);
+    const rowHeight = Math.max(18, 8 + descriptionLines.length * 5);
 
-    if (y + rowHeight > pageHeight - margin - 34) {
+    if (y + rowHeight + 36 > pageHeight - margin) {
       y = addPage();
       y = drawTableHeader(y);
     }
 
-    if (index % 2 === 0) {
-      pdf.setFillColor(...soft);
-      pdf.roundedRect(margin, y - 4, contentWidth, rowHeight, 1.5, 1.5, "F");
-    }
-
-    pdf.setTextColor(...dark);
-    pdf.setFont("helvetica", "normal");
-    pdf.setFontSize(10);
-
-    let x = margin + 4;
-    pdf.text(descriptionLines, x, y + 1);
-    x += tableColumns.description;
-    pdf.text(String(item.qty || 0), x + tableColumns.qty / 2, y + 1, { align: "center" });
-    x += tableColumns.qty;
-    pdf.text(formatMoney(item.unitPrice || 0), x + tableColumns.unitPrice - 2, y + 1, { align: "right" });
-    x += tableColumns.unitPrice;
-    pdf.setFont("helvetica", "bold");
-    pdf.text(formatMoney(Number(item.qty || 0) * Number(item.unitPrice || 0)), x + tableColumns.total - 2, y + 1, {
-      align: "right",
-    });
-
     pdf.setDrawColor(...border);
-    pdf.line(margin, y + rowHeight - 5, pageWidth - margin, y + rowHeight - 5);
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(11);
+
+    let x = margin;
+    pdf.rect(x, y, tableColumns.description, rowHeight);
+    pdf.text(descriptionLines, x + 4, y + 10);
+    x += tableColumns.description;
+
+    pdf.rect(x, y, tableColumns.qty, rowHeight);
+    pdf.text(String(item.qty || 0), x + 4, y + 10);
+    x += tableColumns.qty;
+
+    pdf.rect(x, y, tableColumns.unitPrice, rowHeight);
+    pdf.text(String(Number(item.unitPrice || 0)), x + 4, y + 10);
+    x += tableColumns.unitPrice;
+
+    pdf.rect(x, y, tableColumns.total, rowHeight);
+    pdf.text(
+      Number(Number(item.qty || 0) * Number(item.unitPrice || 0)).toFixed(2),
+      x + 4,
+      y + 10
+    );
+
     y += rowHeight;
   });
 
-  const notesLines = pdf.splitTextToSize(invoice.notes || "No additional notes.", contentWidth - 10);
-  const notesHeight = Math.max(24, 12 + notesLines.length * 5);
+  y += 14;
 
-  if (y + notesHeight + 28 > pageHeight - margin) {
+  if (y + 28 > pageHeight - margin) {
     y = addPage();
   }
 
-  pdf.setTextColor(...muted);
   pdf.setFont("helvetica", "bold");
-  pdf.setFontSize(8);
-  pdf.text("NOTES", margin, y + 2);
-
-  y += 6;
-  pdf.setFillColor(...soft);
-  pdf.setDrawColor(...border);
-  pdf.roundedRect(margin, y, contentWidth, notesHeight, 3, 3, "FD");
-  pdf.setTextColor(...dark);
-  pdf.setFont("helvetica", "normal");
-  pdf.setFontSize(10);
-  pdf.text(notesLines, margin + 5, y + 8);
-
-  y += notesHeight + 8;
-  const totalBoxWidth = 64;
-  pdf.setFillColor(...dark);
-  pdf.roundedRect(pageWidth - margin - totalBoxWidth, y, totalBoxWidth, 18, 3, 3, "F");
-  pdf.setTextColor(...accent);
-  pdf.setFont("helvetica", "normal");
-  pdf.setFontSize(8);
-  pdf.text("TOTAL DUE", pageWidth - margin - totalBoxWidth + 5, y + 6);
-  pdf.setFont("helvetica", "bold");
-  pdf.setFontSize(16);
-  pdf.text(formatMoney(totalDue), pageWidth - margin - 5, y + 13, {
+  pdf.setFontSize(18);
+  pdf.text(`Total Due: ${formatMoney(totalDue)}`, pageWidth - margin, y, {
     align: "right",
   });
+
+  y += 18;
+  const notesLines = pdf.splitTextToSize(invoice.notes || "No additional notes.", contentWidth);
+
+  if (y + 12 + notesLines.length * 5 > pageHeight - margin) {
+    y = addPage();
+  }
+
+  pdf.setFont("helvetica", "normal");
+  pdf.setFontSize(14);
+  pdf.text("Notes:", margin, y);
+  pdf.setFontSize(11);
+  pdf.text(notesLines, margin + 3, y + 10);
 
   return pdf;
 }
